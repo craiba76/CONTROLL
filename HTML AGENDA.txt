@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agenda de Licitações</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #007BFF;
+      color: white;
+    }
+    input[type="text"], input[type="email"], input[type="datetime-local"] {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 10px 5px;
+      border: none;
+      background-color: #007BFF;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .destaque {
+      background-color: #d4edda !important;
+    }
+  </style>
+</head>
+<body>
+  <h2>Agenda de Licitações</h2>
+  <div id="login">
+    <form id="loginForm">
+      <input type="text" id="usuario" placeholder="Usuário" required />
+      <input type="password" id="senha" placeholder="Senha" required />
+      <button type="submit">Acessar</button>
+    </form>
+  </div>
+
+  <div id="agenda" style="display:none;">
+    <audio id="alertaSom" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+    <table id="tabela">
+      <thead>
+        <tr>
+          <th>Data/Hora</th>
+          <th>Empresa</th>
+          <th>Pregão/Dispensa</th>
+          <th>UASG</th>
+          <th>Órgão</th>
+          <th>Estado</th>
+          <th>Portal</th>
+          <th>Descrição</th>
+          <th>Edital</th>
+          <th>Fornecedor (Nome)</th>
+          <th>Telefone</th>
+          <th>Email</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="ordenarTabela()">Ordenar por Data</button>
+    <button onclick="adicionarNovaLinha()">Adicionar Nova Linha</button>
+    <button onclick="fecharPlanilha()">Fechar e Salvar</button>
+  </div>
+
+  <script>
+    const usuarios = { "BH": "123", "HDF": "321" };
+
+    document.getElementById("loginForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+      let usuario = document.getElementById("usuario").value.trim();
+      let senha = document.getElementById("senha").value.trim();
+      if (usuarios[usuario] === senha) {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("agenda").style.display = "block";
+        carregarDados();
+        alert("Login bem-sucedido!");
+      } else {
+        alert("Usuário ou senha incorretos!");
+      }
+    });
+
+    function adicionarNovaLinha(dado = {}) {
+      let tabela = document.getElementById("tabela").getElementsByTagName("tbody")[0];
+      let novaLinha = tabela.insertRow();
+      let colunas = ["horario", "empresa", "pregao", "uasg", "orgao", "estado", "portal", "descricao", "edital", "fornecedor", "telefone", "email"];
+      colunas.forEach(coluna => {
+        let celula = novaLinha.insertCell();
+        let input = document.createElement("input");
+        input.name = coluna;
+        input.value = dado[coluna] || "";
+        input.type = coluna === "horario" ? "datetime-local" : coluna === "email" ? "email" : "text";
+        celula.appendChild(input);
+      });
+    }
+
+    function salvarDados() {
+      let dados = [];
+      document.querySelectorAll("#tabela tbody tr").forEach(linha => {
+        let obj = {};
+        linha.querySelectorAll("input").forEach(input => {
+          obj[input.name] = input.value;
+        });
+        dados.push(obj);
+      });
+      localStorage.setItem("agendaLicitacoes", JSON.stringify(dados));
+    }
+
+    function carregarDados() {
+      let dados = JSON.parse(localStorage.getItem("agendaLicitacoes")) || [];
+      dados.forEach(dado => adicionarNovaLinha(dado));
+    }
+
+    function fecharPlanilha() {
+      salvarDados();
+      alert("Planilha salva com sucesso!");
+    }
+
+    function ordenarTabela() {
+      let tabela = document.getElementById("tabela").getElementsByTagName("tbody")[0];
+      let linhas = Array.from(tabela.rows);
+      linhas.sort((a, b) => {
+        let dataA = new Date(a.cells[0].querySelector("input").value);
+        let dataB = new Date(b.cells[0].querySelector("input").value);
+        return dataA - dataB;
+      });
+      linhas.forEach(linha => tabela.appendChild(linha));
+      destacarPrimeiraLinha();
+    }
+
+    function destacarPrimeiraLinha() {
+      let tabela = document.getElementById("tabela").getElementsByTagName("tbody")[0];
+      Array.from(tabela.rows).forEach(row => row.classList.remove("destaque"));
+      let earliestDateRow = null;
+      let earliestDate = null;
+      Array.from(tabela.rows).forEach(row => {
+        let dateValue = new Date(row.cells[0].querySelector("input").value);
+        if (!earliestDate || dateValue < earliestDate) {
+          earliestDate = dateValue;
+          earliestDateRow = row;
+        }
+      });
+      if (earliestDateRow) {
+        earliestDateRow.classList.add("destaque");
+      }
+    }
+  </script>
+</body>
+</html>
